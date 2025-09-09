@@ -197,7 +197,7 @@ void printSerialData() { // Stampa dei dati
   Serial.print(distanceCm, 1);
   Serial.print(" cm  |  Velocità: ");
   Serial.print(velocity, 2);
-  Serial.print(" cm/s");
+  Serial.println(" cm/s");
   
 }
 
