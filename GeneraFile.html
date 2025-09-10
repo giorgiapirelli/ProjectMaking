@@ -1,0 +1,265 @@
+<!-- PAGINA WEB PER CREARE FILE PER LE CREDENZIALI DI CONFIGURAZIONE-->
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Generatore di credentials.h</title>
+  <style>
+    :root {
+      font-family: Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #fde2e9, #fbcfe8);
+      color: #0f172a;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      text-align: center;
+      color: #db2777;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(190, 24, 93, 0.25);
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    input[type=text], input[type=password] {
+      width: 100%;
+      padding: 14px 16px;
+      margin-top: 8px;
+      border-radius: 12px;
+      border: 1px solid #f9a8d4;
+      font-size: 15px;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #db2777;
+      box-shadow: 0 0 0 2px rgba(219, 39, 119, 0.25);
+    }
+
+    .row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .row > div {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 14px;
+      margin-top: 26px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 0;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ec4899, #db2777);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(219, 39, 119, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #db2777, #be185d);
+    }
+
+    .btn-ghost {
+      background: #fce7f3;
+      color: #9d174d;
+    }
+
+    .btn-ghost:hover {
+      background: #fbcfe8;
+    }
+
+    pre {
+      background: #0b1220;
+      color: #fbcfe8;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      overflow-x: auto;
+    }
+
+    .small {
+      font-size: 14px;
+      color: #475569;
+    }
+
+    #preview {
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Configura e scarica le tue credenziali</h1>
+    <p class="small" style="text-align:center">
+      Compila i campi qui sotto, poi premi <strong>Genera e Scarica</strong> per ottenere il file personalizzato.
+    </p>
+
+    <label for="ssid">WIFI_SSID</label>
+    <input id="ssid" type="text" placeholder="Inserisci il nome della rete Wi-Fi" />
+
+    <label for="pwd">WIFI_PASSWORD</label>
+    <input id="pwd" type="password" placeholder="Inserisci la password della rete" />
+
+    <div class="row">
+      <div>
+        <label for="token">BOT_TOKEN</label>
+        <input id="token" type="text" placeholder="Inserisci il token del bot" />
+      </div>
+      <div>
+        <label for="chat">CHAT_ID</label>
+        <input id="chat" type="text" placeholder="Inserisci l'id della chat" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="generate" class="btn-primary">Genera e Scarica</button>
+      <button id="previewBtn" class="btn-ghost">Anteprima</button>
+      <button id="copyBtn" class="btn-ghost">Copia</button>
+    </div>
+
+    <div id="preview" style="display:none">
+      <p class="small" style="margin-top:18px">Anteprima del file generato:</p>
+      <pre id="output" aria-live="polite"></pre>
+    </div>
+
+    <p class="small" style="margin-top:20px;text-align:center">
+      Il file generato sarà chiamato <code>credentials.h</code>. Assicurati che il file si trovi nella stessa directory dello sketch esp32.ino.
+    </p>
+  </div>
+
+  <script>
+    function buildContent(values) {
+      const { ssid, pwd, token, chat } = values;
+      const esc = s => s.replace(/\"/g, '\\"');
+      const line = (k, v) => `const char* ${k} = "${v}";`;
+
+      let out = '';
+      out += '#ifndef CREDENTIALS_H\n#define CREDENTIALS_H\n\n';
+      out += '// Configurazione Wi-Fi\n';
+      out += line('WIFI_SSID', esc(ssid)) + '\n';
+      out += line('WIFI_PASSWORD', esc(pwd)) + '\n\n';
+      out += '// Configurazione Telegram Bot\n';
+      out += line('BOT_TOKEN', esc(token)) + '\n';
+      out += line('CHAT_ID', esc(chat)) + '\n\n';
+      out += '#endif\n';
+
+      return out;
+    }
+
+    function downloadFile(filename, text) {
+      const blob = new Blob([text], { type: 'text/x-csrc;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    const ssidEl = document.getElementById('ssid');
+    const pwdEl = document.getElementById('pwd');
+    const tokenEl = document.getElementById('token');
+    const chatEl = document.getElementById('chat');
+    const genBtn = document.getElementById('generate');
+    const previewBtn = document.getElementById('previewBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const outEl = document.getElementById('output');
+    const previewWrap = document.getElementById('preview');
+
+    function currentValues() {
+      return {
+        ssid: ssidEl.value || '',
+        pwd: pwdEl.value || '',
+        token: tokenEl.value || '',
+        chat: chatEl.value || ''
+      };
+    }
+
+    function updatePreview() {
+      const content = buildContent(currentValues());
+      outEl.textContent = content;
+    }
+
+    genBtn.addEventListener('click', () => {
+      const vals = currentValues();
+      const content = buildContent(vals);
+      downloadFile('credentials.h', content);
+    });
+
+    previewBtn.addEventListener('click', () => {
+      previewWrap.style.display = previewWrap.style.display === 'none' ? 'block' : 'none';
+      if (previewWrap.style.display === 'block') updatePreview();
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const content = buildContent(currentValues());
+      try {
+        await navigator.clipboard.writeText(content);
+        copyBtn.textContent = 'Copiato!';
+        setTimeout(() => copyBtn.textContent = 'Copia', 1500);
+      } catch (e) {
+        alert('Impossibile copiare: ' + e.message);
+      }
+    });
+
+    [ssidEl, pwdEl, tokenEl, chatEl].forEach(el => 
+      el.addEventListener('input', () => {
+        if (previewWrap.style.display === 'block') updatePreview();
+      })
+    );
+  </script>
+</body>
+</html>
